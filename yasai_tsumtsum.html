@@ -376,18 +376,36 @@ let TSUM_RADIUS = 36;
 
 function resizeCanvas() {
   const rect = gameArea.getBoundingClientRect();
-  W = rect.width;
-  H = rect.height;
+  const newW = rect.width;
+  const newH = rect.height;
+  // サイズが実質変わっていなければスキップ
+  if (Math.abs(newW - W) < 1 && Math.abs(newH - H) < 1) return;
+  W = newW;
+  H = newH;
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width = W + 'px';
   canvas.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  // 画面サイズに応じてツムサイズ調整（PCでも大きく）
+  // 画面サイズに応じてツムサイズ調整
   TSUM_RADIUS = Math.max(28, Math.min(44, Math.floor(Math.min(W, H) / 11)));
-  tsums.forEach(t => t.r = TSUM_RADIUS);
+  // 既存ツムの半径を更新（ビッグツムは1.6倍を維持）
+  tsums.forEach(t => {
+    t.r = t.isBig ? TSUM_RADIUS * 1.6 : TSUM_RADIUS;
+    // 画面外に出ているツムを内側に戻す
+    if (t.x < t.r) t.x = t.r;
+    if (t.x > W - t.r) t.x = W - t.r;
+    if (t.y > H - t.r) { t.y = H - t.r; t.vy = 0; }
+    if (t.y < t.r) t.y = t.r;
+  });
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+// ゲームエリアのサイズ変化を確実に検知（CSS変化・アドレスバー変化に対応）
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => resizeCanvas());
+  ro.observe(gameArea);
+}
 
 const GRAVITY = 0.6;
 const FRICTION = 0.96;
