@@ -662,11 +662,13 @@ let lastSpawn = 0;
 
 // フィーバー関連
 const FEVER_THRESHOLD = 3000;  // フィーバーゲージMAXで発動
-const FEVER_DURATION = 8;       // 秒
+const FEVER_DURATION = 13;      // 秒（盛り上がる時間を確保）
 let feverGauge = 0;
 let feverActive = false;
 let feverTimeLeft = 0;
 let feverInterval = null;
+let feverCount = 0;          // 何回目のフィーバーか
+let feverTarget = null;      // 2回目以降のターゲット野菜（key）
 
 function getMaxTsums() {
   // 画面サイズに応じて最大数を調整
@@ -679,7 +681,13 @@ function getMaxTsums() {
 
 function spawnTsum() {
   if (tsums.length >= getMaxTsums()) return;
-  const v = VEGGIES[Math.floor(Math.random() * VEGGIES.length)];
+  let v;
+  // ターゲットフィーバー中は60%の確率でターゲット野菜が出る
+  if (feverActive && feverTarget && Math.random() < 0.6) {
+    v = VEGGIES.find(x => x.key === feverTarget) || VEGGIES[0];
+  } else {
+    v = VEGGIES[Math.floor(Math.random() * VEGGIES.length)];
+  }
   // 通常5%、フィーバー中は25%でビッグツム
   const isBig = Math.random() < (feverActive ? 0.25 : 0.05);
   // 上部に他のツムが居ない場所を探す
@@ -809,14 +817,29 @@ function startFever() {
   feverActive = true;
   feverTimeLeft = FEVER_DURATION;
   feverGauge = 0;
+  feverCount++;
   updateFeverGauge();
   document.getElementById('gameArea').classList.add('fever');
   playFeverSE();
-  // フィーバーバナー
+  switchToFeverBgm();
+  
+  // 2回目以降はターゲット野菜を選択
   const banner = document.getElementById('feverBanner');
+  if (feverCount >= 2) {
+    // 前回と違う野菜を選ぶ
+    const candidates = VEGGIES.filter(v => v.key !== feverTarget);
+    feverTarget = candidates[Math.floor(Math.random() * candidates.length)].key;
+    const targetVeg = VEGGIES.find(v => v.key === feverTarget);
+    // バナー文言を切り替え
+    banner.innerHTML = `🔥 ${targetVeg.name}フィーバー！ 🔥<br><span style="font-size:0.6em">スコア3倍 / ${targetVeg.name}が大量出現</span>`;
+  } else {
+    feverTarget = null;
+    banner.innerHTML = `🔥 FEVER TIME! 🔥<br><span style="font-size:0.6em">スコア3倍 / ビッグツム多発</span>`;
+  }
   banner.classList.remove('show');
   void banner.offsetWidth; // reflow
   banner.classList.add('show');
+  
   // フィーバー中は既存ツムの一部をビッグに格上げ
   const candidates = tsums.filter(t => !t.removing && !t.isBig);
   const upgradeCount = Math.min(5, Math.floor(candidates.length * 0.2));
@@ -826,6 +849,19 @@ function startFever() {
     t.isBig = true;
     t.r = TSUM_RADIUS * 1.6;
   }
+  
+  // ターゲットフィーバー時：既存ツムの一部もターゲット野菜に置き換え
+  if (feverTarget) {
+    const targetVeg = VEGGIES.find(v => v.key === feverTarget);
+    const others = tsums.filter(t => !t.removing && t.veggie.key !== feverTarget);
+    const convertCount = Math.min(8, Math.floor(others.length * 0.4));
+    for (let i = 0; i < convertCount; i++) {
+      const idx = Math.floor(Math.random() * others.length);
+      const t = others.splice(idx, 1)[0];
+      t.veggie = targetVeg;
+    }
+  }
+  
   // フィーバータイマー
   if (feverInterval) clearInterval(feverInterval);
   feverInterval = setInterval(() => {
@@ -836,8 +872,10 @@ function startFever() {
 
 function endFever() {
   feverActive = false;
+  feverTarget = null;
   if (feverInterval) { clearInterval(feverInterval); feverInterval = null; }
   document.getElementById('gameArea').classList.remove('fever');
+  switchToNormalBgm();
 }
 
 function updateScore() {
@@ -962,6 +1000,8 @@ function startGame() {
   feverGauge = 0;
   feverActive = false;
   feverTimeLeft = 0;
+  feverCount = 0;
+  feverTarget = null;
   if (feverInterval) { clearInterval(feverInterval); feverInterval = null; }
   document.getElementById('gameArea').classList.remove('fever');
   updateFeverGauge();
@@ -1104,7 +1144,7 @@ function playGameOverSE() {
 }
 
 // === BGM: ループ生成 ===
-// ほのぼの農園風メロディー（Cメジャースケール）
+// 通常BGM：ほのぼの農園風（Cメジャー）
 const BGM_MELODY = [
   // [周波数, 長さ(拍)]
   [523, 1], [587, 1], [659, 1], [523, 1],
@@ -1121,6 +1161,39 @@ const BGM_BASS = [
   [131, 4], [165, 4], [147, 4], [196, 4],
 ];
 const BGM_TEMPO = 120; // BPM
+
+// フィーバーBGM：アップテンポなお祭り風（Eマイナー、シンコペーション）
+const FEVER_MELODY = [
+  // 8分音符中心の細かく刻むメロディ
+  [659, 0.5], [784, 0.5], [988, 0.5], [784, 0.5],
+  [659, 0.5], [988, 0.5], [1175, 1],
+  [988, 0.5], [784, 0.5], [659, 0.5], [587, 0.5],
+  [659, 2],
+  [784, 0.5], [988, 0.5], [1175, 0.5], [988, 0.5],
+  [784, 0.5], [1175, 0.5], [1319, 1],
+  [1175, 0.5], [988, 0.5], [784, 0.5], [659, 0.5],
+  [784, 2],
+  // クライマックス上昇
+  [659, 0.25], [784, 0.25], [988, 0.25], [1175, 0.25],
+  [1319, 0.25], [1175, 0.25], [988, 0.25], [784, 0.25],
+  [988, 1], [784, 1],
+  [659, 0.5], [988, 0.5], [784, 0.5], [659, 0.5],
+  [659, 2],
+];
+const FEVER_BASS = [
+  // 力強いベースライン（速いリズム）
+  [165, 0.5], [165, 0.5], [165, 1],
+  [165, 0.5], [165, 0.5], [196, 1],
+  [220, 0.5], [220, 0.5], [220, 1],
+  [165, 0.5], [196, 0.5], [165, 1],
+  [165, 0.5], [165, 0.5], [165, 1],
+  [196, 0.5], [196, 0.5], [196, 1],
+  [220, 0.5], [220, 0.5], [220, 1],
+  [196, 0.5], [165, 0.5], [165, 1],
+];
+const FEVER_TEMPO = 160; // BPM 高速
+
+let bgmMode = 'normal'; // 'normal' | 'fever'
 
 function playBgmNote(freq, durationSec, startOffset, type = 'sine', vol = 0.15) {
   if (!audioCtx) return null;
@@ -1142,25 +1215,46 @@ function playBgmNote(freq, durationSec, startOffset, type = 'sine', vol = 0.15) 
 
 function scheduleBgmLoop() {
   if (!audioCtx) return;
-  const beatSec = 60 / BGM_TEMPO;
+  const isFever = bgmMode === 'fever';
+  const tempo = isFever ? FEVER_TEMPO : BGM_TEMPO;
+  const melody = isFever ? FEVER_MELODY : BGM_MELODY;
+  const bass = isFever ? FEVER_BASS : BGM_BASS;
+  const melodyType = isFever ? 'square' : 'triangle';  // フィーバーは硬く明るい音
+  const melodyVol = isFever ? 0.14 : 0.12;
+  const bassVol = isFever ? 0.12 : 0.08;
+  const beatSec = 60 / tempo;
+  
   let offset = 0;
-  // メロディー
-  BGM_MELODY.forEach(([freq, beats]) => {
-    const osc = playBgmNote(freq, beats * beatSec * 0.95, offset, 'triangle', 0.12);
+  melody.forEach(([freq, beats]) => {
+    const osc = playBgmNote(freq, beats * beatSec * 0.95, offset, melodyType, melodyVol);
     if (osc) bgmNodes.push(osc);
     offset += beats * beatSec;
   });
   const totalSec = offset;
-  // ベース（ループに合わせて）
+  
   let bassOffset = 0;
-  BGM_BASS.forEach(([freq, beats]) => {
-    const osc = playBgmNote(freq, beats * beatSec * 0.95, bassOffset, 'sine', 0.08);
+  bass.forEach(([freq, beats]) => {
+    const osc = playBgmNote(freq, beats * beatSec * 0.95, bassOffset, 'sawtooth', bassVol);
     if (osc) bgmNodes.push(osc);
     bassOffset += beats * beatSec;
   });
-  // ループ
+  
+  // フィーバー時はキックドラム的な低音パルスを追加
+  if (isFever) {
+    let kickOffset = 0;
+    const kickPattern = [1, 0.5, 0.5, 1, 1, 0.5, 0.5, 1]; // 1ループ分
+    while (kickOffset < totalSec) {
+      kickPattern.forEach(beats => {
+        if (kickOffset >= totalSec) return;
+        const osc = playBgmNote(80, 0.1, kickOffset, 'sine', 0.18);
+        if (osc) bgmNodes.push(osc);
+        kickOffset += beats * beatSec;
+      });
+    }
+  }
+  
   bgmTimeoutId = setTimeout(() => {
-    bgmNodes = bgmNodes.filter(n => false); // クリア
+    bgmNodes = [];
     scheduleBgmLoop();
   }, totalSec * 1000);
 }
@@ -1170,6 +1264,23 @@ function startBgm() {
   if (!audioCtx) return;
   if (audioCtx.state === 'suspended') audioCtx.resume();
   stopBgm();
+  bgmMode = 'normal';
+  scheduleBgmLoop();
+}
+
+function switchToFeverBgm() {
+  if (!audioCtx) return;
+  if (bgmMode === 'fever') return;
+  stopBgm();
+  bgmMode = 'fever';
+  scheduleBgmLoop();
+}
+
+function switchToNormalBgm() {
+  if (!audioCtx) return;
+  if (bgmMode === 'normal') return;
+  stopBgm();
+  bgmMode = 'normal';
   scheduleBgmLoop();
 }
 
