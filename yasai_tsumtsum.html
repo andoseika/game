@@ -115,6 +115,18 @@
   }
   .modal h2 { color: #78350f; font-size: 24px; margin-bottom: 12px; }
   .modal p { color: #92400e; margin-bottom: 6px; font-size: 15px; }
+  .modal #rankText {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 8px 0;
+    text-shadow: 0 2px 4px rgba(255,255,255,0.6);
+    animation: rankBounce 0.6s ease-out;
+  }
+  @keyframes rankBounce {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
   .modal .big-score { font-size: 42px; font-weight: 800; color: #d97706; margin: 12px 0; }
   .modal-btn {
     margin-top: 16px;
@@ -357,6 +369,25 @@
     </div>
     
     <p style="margin-top:8px;font-size:13px;color:#a16207">たくさん繋げるほど高得点！</p>
+    
+    <details style="margin-top:10px;text-align:left;font-size:12px;color:#78350f;background:rgba(255,255,255,0.5);border-radius:10px;padding:8px 12px">
+      <summary style="font-weight:700;cursor:pointer;font-size:13px">🏅 称号一覧（タップで表示）</summary>
+      <div style="margin-top:8px;line-height:1.7">
+        <div style="color:#fbbf24;font-weight:700">👑 伝説のやさい王 <span style="color:#92400e;font-weight:500">10万〜</span></div>
+        <div style="color:#a855f7;font-weight:700">🌈 神農の使者 <span style="color:#92400e;font-weight:500">7万〜</span></div>
+        <div style="color:#06b6d4;font-weight:700">💎 やさいレジェンド <span style="color:#92400e;font-weight:500">5万〜</span></div>
+        <div style="color:#ef4444;font-weight:700">🏆 やさいマイスター <span style="color:#92400e;font-weight:500">3.5万〜</span></div>
+        <div style="color:#f97316;font-weight:700">⭐ やさいマスター <span style="color:#92400e;font-weight:500">2.5万〜</span></div>
+        <div style="color:#eab308;font-weight:700">🥇 やさいエース <span style="color:#92400e;font-weight:500">1.8万〜</span></div>
+        <div style="color:#84cc16;font-weight:700">🥈 やさい上手 <span style="color:#92400e;font-weight:500">1.2万〜</span></div>
+        <div style="color:#22c55e;font-weight:700">🥉 やさい名人 <span style="color:#92400e;font-weight:500">8千〜</span></div>
+        <div style="color:#10b981;font-weight:700">🥕 やさい職人 <span style="color:#92400e;font-weight:500">5千〜</span></div>
+        <div style="color:#06b6d4;font-weight:700">🌱 やさい見習い <span style="color:#92400e;font-weight:500">2.5千〜</span></div>
+        <div style="color:#8b5cf6;font-weight:700">🌾 ちいさな農家 <span style="color:#92400e;font-weight:500">1千〜</span></div>
+        <div style="color:#94a3b8;font-weight:700">🍃 はじめての収穫 <span style="color:#92400e;font-weight:500">0〜</span></div>
+      </div>
+    </details>
+    
     <button class="modal-btn" id="btnStart">スタート</button>
   </div>
 </div>
@@ -1192,11 +1223,29 @@ function endGame() {
   stopBgm();
   playGameOverSE();
   document.getElementById('finalScore').textContent = score.toLocaleString();
-  let rank = 'がんばりました！';
-  if (score >= 10000) rank = '🌟 やさいマスター！';
-  else if (score >= 5000) rank = '🥕 すごい！';
-  else if (score >= 2000) rank = '🌱 いい調子！';
-  document.getElementById('rankText').textContent = rank;
+  // 称号判定（スコアに応じて11段階）
+  const titles = [
+    { min: 100000, label: '👑 伝説のやさい王', color: '#fbbf24' },
+    { min:  70000, label: '🌈 神農の使者',     color: '#a855f7' },
+    { min:  50000, label: '💎 やさいレジェンド', color: '#06b6d4' },
+    { min:  35000, label: '🏆 やさいマイスター', color: '#ef4444' },
+    { min:  25000, label: '⭐ やさいマスター',  color: '#f97316' },
+    { min:  18000, label: '🥇 やさいエース',    color: '#eab308' },
+    { min:  12000, label: '🥈 やさい上手',      color: '#84cc16' },
+    { min:   8000, label: '🥉 やさい名人',      color: '#22c55e' },
+    { min:   5000, label: '🥕 やさい職人',      color: '#10b981' },
+    { min:   2500, label: '🌱 やさい見習い',    color: '#06b6d4' },
+    { min:   1000, label: '🌾 ちいさな農家',    color: '#8b5cf6' },
+    { min:      0, label: '🍃 はじめての収穫',  color: '#94a3b8' },
+  ];
+  const t = titles.find(x => score >= x.min);
+  const rankEl = document.getElementById('rankText');
+  rankEl.textContent = t.label;
+  rankEl.style.color = t.color;
+  // アニメーション再生のためクラス再付与
+  rankEl.style.animation = 'none';
+  void rankEl.offsetWidth;
+  rankEl.style.animation = 'rankBounce 0.6s ease-out';
   
   // 自己ベスト判定
   const oldBest = loadBest();
