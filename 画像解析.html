@@ -181,15 +181,6 @@
   .supplement{border:1px solid var(--border-dim);background:rgba(0,0,0,0.25);border-radius:6px;padding:14px;font-size:12px;line-height:1.7;color:var(--fg-dim);}
   @media (min-width:1024px){.supplement{width:256px;flex:none;}}
 
-  /* usage */
-  .usage-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-  .usage-badge{border-radius:4px;border:1px solid rgba(111,154,151,.4);padding:2px 8px;font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.14em;color:var(--fg-dim);}
-  .usage-empty{font-size:12px;color:var(--fg-dim);}
-  .usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px;}
-  .usage-item{display:flex;flex-direction:column;gap:2px;border-bottom:1px solid var(--border-dim);padding-bottom:6px;}
-  .usage-item dt{font-size:10px;color:var(--fg-dim);}
-  .usage-item dd{margin:0;font-family:ui-monospace,monospace;color:var(--fg-base);}
-
   .retry-row{display:flex;flex-direction:column;gap:8px;}
   @media (min-width:640px){.retry-row{flex-direction:row;}}
   .retry-row .btn-start{flex:1;}
@@ -261,7 +252,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2 class="panel-title">解析プロセス</h2>
-        <span class="steps-count" id="stepsCount">00 / 25</span>
+        <span class="steps-count" id="stepsCount">00 / 45</span>
       </div>
       <div class="steps-head">
         <span>#</span><span>ステップ / 詳細</span><span>状態</span>
@@ -273,14 +264,6 @@
       <section class="panel">
         <h2 class="panel-title" style="margin-bottom:16px;">解析結果</h2>
         <div id="resultArea"></div>
-      </section>
-
-      <section class="panel">
-        <div class="usage-head">
-          <h2 class="panel-title" style="margin:0;">使用量</h2>
-          <span class="usage-badge" id="usageBadge" style="display:none;">DEMO</span>
-        </div>
-        <div id="usageArea"><p class="usage-empty">解析完了後に表示されます</p></div>
       </section>
 
       <div class="retry-row" id="retryRow" style="display:none;">
@@ -310,7 +293,6 @@
 
   var ACCEPTED_TYPES = ["image/jpeg","image/png","image/webp","image/gif"];
   var MAX_FILE_SIZE = 15 * 1024 * 1024;
-  var MODEL_NAME = "claude-sonnet-5";
 
   var STEP_DEFS = [
     { id:"input-check", label:"入力画像確認", description:"ファイル整合性・フォーマット確認", min:180, max:320 },
@@ -336,6 +318,26 @@
     { id:"context", label:"コンテキスト推論", description:"既知パターンとの照合", min:320, max:520 },
     { id:"existence", label:"物体存在判定", description:"物体存在確率の統計検定", min:260, max:420 },
     { id:"something-existence", label:"何か存在判定", description:"存在確率の統計的検定", min:260, max:420 },
+    { id:"quantum-fluctuation", label:"量子ゆらぎ解析", description:"プランク定数を一応確認", min:180, max:320 },
+    { id:"image-feelings", label:"画像の気持ち推定", description:"感情パラメータの走査", min:200, max:340 },
+    { id:"pixel-honne", label:"ピクセルの本音確認", description:"本音と建前の分離", min:180, max:320 },
+    { id:"cosmic-ray", label:"宇宙線影響評価", description:"高エネルギー粒子の混入確認", min:220, max:360 },
+    { id:"seriousness", label:"画像の本気度判定", description:"ガチ度スコア算出", min:200, max:340 },
+    { id:"causality-check", label:"因果律整合性チェック", description:"時系列の矛盾検出", min:220, max:380 },
+    { id:"parallel-world", label:"平行世界比較解析", description:"並行宇宙データとの照合", min:240, max:400 },
+    { id:"self-declaration", label:"画像の自己申告確認", description:"本人からの申告内容を確認", min:200, max:340 },
+    { id:"read-the-air", label:"ピクセル間の空気読み", description:"暗黙の了解を検出", min:200, max:340 },
+    { id:"ai-motivation", label:"解析AIのやる気確認", description:"モチベーション残量チェック", min:180, max:320 },
+    { id:"fortune-telling", label:"画像運勢占い", description:"今週の運勢を算出(参考値)", min:220, max:380 },
+    { id:"urban-legend", label:"都市伝説照合", description:"既知の噂話とのマッチング", min:220, max:360 },
+    { id:"aura-diagnosis", label:"画像のオーラ診断", description:"色調から霊視(非科学的)", min:220, max:380 },
+    { id:"server-mood", label:"サーバーの機嫌伺い", description:"処理継続の意思確認", min:180, max:320 },
+    { id:"double-take", label:"二度見要否判定", description:"二度見コストの見積もり", min:200, max:340 },
+    { id:"greeting", label:"画像への挨拶", description:"礼儀として一言", min:160, max:280 },
+    { id:"meta-probability", label:"存在確率の存在確率判定", description:"メタ的な確率のメタ確認", min:240, max:400 },
+    { id:"excuse-prep", label:"判定理由の言い訳準備", description:"詰められた時の想定問答作成", min:220, max:380 },
+    { id:"fatigue-monitor", label:"解析疲労度モニタリング", description:"解析エンジンの息切れ確認", min:200, max:340 },
+    { id:"wait-and-see", label:"総合的に一旦様子見", description:"とりあえず保留にするかの検討", min:220, max:380 },
     { id:"recheck", label:"一応もう一回確認", description:"念のため再検証(重要)", min:1400, max:2000 },
     { id:"final-verdict", label:"総合判定生成", description:"最終統合・結論生成", min:700, max:1000 }
   ];
@@ -494,7 +496,6 @@
     confidence: 0,
     elapsedMs: 0,
     startedAt: 0,
-    usage: null,
     statsSeed: 0,
     conclusionId: null,
     errorMessage: null,
@@ -523,8 +524,6 @@
     stepsCount: document.getElementById("stepsCount"),
     stepsList: document.getElementById("stepsList"),
     resultArea: document.getElementById("resultArea"),
-    usageArea: document.getElementById("usageArea"),
-    usageBadge: document.getElementById("usageBadge"),
     retryRow: document.getElementById("retryRow"),
     statusDot: document.getElementById("statusDot"),
     statusText: document.getElementById("statusText")
@@ -725,30 +724,6 @@
     return '<div class="item"><span class="lab">' + label + '</span><span class="val' + (accent ? " "+accent : "") + '">' + value + '</span></div>';
   }
 
-  // ---- render: usage ----
-  function renderUsage(){
-    if (!state.usage){
-      el.usageBadge.style.display = "none";
-      el.usageArea.innerHTML = '<p class="usage-empty">解析完了後に表示されます</p>';
-      return;
-    }
-    el.usageBadge.style.display = "inline-block";
-    var u = state.usage;
-    el.usageArea.innerHTML = '<dl class="usage-grid">' +
-      usageItem("使用モデル", u.model) +
-      usageItem("入力トークン", String(u.inputTokens)) +
-      usageItem("出力トークン", String(u.outputTokens)) +
-      usageItem("合計トークン", String(u.totalTokens)) +
-      usageItem("入力料金", "$" + u.inputCostUsd.toFixed(4)) +
-      usageItem("出力料金", "$" + u.outputCostUsd.toFixed(4)) +
-      usageItem("合計料金", "$" + u.totalCostUsd.toFixed(4)) +
-      usageItem("日本円換算", "¥" + u.totalCostJpy) +
-      '</dl>';
-  }
-  function usageItem(label, value){
-    return '<div class="usage-item"><dt>' + label + '</dt><dd>' + escapeHtml(value) + '</dd></div>';
-  }
-
   function renderRetry(){
     el.retryRow.style.display = state.phase === "done" ? "flex" : "none";
   }
@@ -758,7 +733,6 @@
     renderPreview();
     renderStepsFull();
     renderBottom();
-    renderUsage();
     renderRetry();
   }
 
@@ -796,7 +770,6 @@
     state.progress = 0;
     state.confidence = 0;
     state.elapsedMs = 0;
-    state.usage = null;
     state.conclusionId = null;
     state.phase = "ready";
 
@@ -823,7 +796,6 @@
     state.progress = 0;
     state.confidence = 0;
     state.elapsedMs = 0;
-    state.usage = null;
     state.errorMessage = null;
     state.statsSeed = Math.random();
     state.conclusionId = null;
@@ -843,15 +815,9 @@
       if (i >= state.steps.length){
         if (state.timer) clearInterval(state.timer);
         state.elapsedMs = Date.now() - startedAt;
-        state.usage = {
-          mode:"demo", model:MODEL_NAME,
-          inputTokens:0, outputTokens:0, totalTokens:0,
-          inputCostUsd:0, outputCostUsd:0, totalCostUsd:0, totalCostJpy:0
-        };
         state.conclusionId = generateConclusionId();
         state.phase = "done";
         renderBottom();
-        renderUsage();
         renderRetry();
         renderHeader();
         renderPreview();
@@ -897,7 +863,6 @@
     state.progress = 0;
     state.confidence = 0;
     state.elapsedMs = 0;
-    state.usage = null;
     state.errorMessage = null;
     state.statsSeed = 0;
     state.conclusionId = null;
