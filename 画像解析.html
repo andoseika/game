@@ -280,7 +280,7 @@
           <span>WALL TIME: <b>44min</b></span>
           <span>TOKENS: <b>890 in / 6.8k out</b></span>
         </div>
-        <p class="punch">この「<b>何かが写っています</b>」という結論一つを出すためだけに、上記のコストと時間が溶けました。</p>
+        <p class="punch">「<b>分かっとるわい</b>」と言われそうな結論一つを出すためだけに、上記のコストと時間が溶けました。</p>
       </div>
     </div>
 
@@ -347,6 +347,19 @@
     def.min = Math.round(def.min * DURATION_MULTIPLIER);
     def.max = Math.round(def.max * DURATION_MULTIPLIER);
   });
+
+  var RESULT_PATTERNS = [
+    { title:"何かが写っています", sub1:"少なくとも無ではありません", sub2:"はい、何かです。" },
+    { title:"これは画像です", sub1:"開く前から分かっていたかもしれません", sub2:"でも一応、解析はしました。" },
+    { title:"色がついています", sub1:"モノクロの可能性もゼロではありませんが", sub2:"多分、色はついています。" },
+    { title:"何かの形をしています", sub1:"形がないということはありません", sub2:"それはそうです。" },
+    { title:"あなたが選んだ画像です", sub1:"他の誰の画像でもありません", sub2:"当然といえば当然です。" },
+    { title:"ピクセルで構成されています", sub1:"画像なので当然です", sub2:"逆に何だと思っていましたか。" },
+    { title:"見れば分かる内容でした", sub1:"45項目かけて解析しましたが", sub2:"結局、見れば分かりました。" },
+    { title:"存在しないわけがありません", sub1:"アップロードされた時点で存在は確定しています", sub2:"今さらですが。" },
+    { title:"縦と横があります", sub1:"正方形の可能性もありますが", sub2:"とにかく形はあります。" },
+    { title:"何かではあります", sub1:"無ではないことは確実です", sub2:"それ以上でもそれ以下でもありません。" }
+  ];
 
   function buildRuntimeSteps(){
     var n = STEP_DEFS.length;
@@ -504,6 +517,7 @@
     startedAt: 0,
     statsSeed: 0,
     conclusionId: null,
+    resultPattern: null,
     errorMessage: null,
     runId: 0,
     timer: null
@@ -685,13 +699,14 @@
   }
 
   function resultHtml(){
+    var pattern = state.resultPattern || RESULT_PATTERNS[0];
     return '' +
     '<div class="result-wrap">' +
       '<div class="result-main">' +
         '<span class="panel-title">解析結果</span>' +
         '<div class="check-badge">' + checkIconSvg().replace('width="16" height="16"','') + '</div>' +
-        '<h2>何かが写っています</h2>' +
-        '<p class="result-sub">少なくとも無ではありません<br>はい、何かです。</p>' +
+        '<h2>' + escapeHtml(pattern.title) + '</h2>' +
+        '<p class="result-sub">' + escapeHtml(pattern.sub1) + '<br>' + escapeHtml(pattern.sub2) + '</p>' +
         (state.conclusionId ? '<p class="conclusion-id">CONCLUSION ID: ' + state.conclusionId + '</p>' : '') +
         '<div class="conf-final"><span class="panel-title" style="display:inline;">確信度</span><span class="val mono">' + formatPercent(state.confidence) + '</span></div>' +
       '</div>' +
@@ -825,6 +840,7 @@
         if (state.timer) clearInterval(state.timer);
         state.elapsedMs = Date.now() - startedAt;
         state.conclusionId = generateConclusionId();
+        state.resultPattern = RESULT_PATTERNS[Math.floor(Math.random() * RESULT_PATTERNS.length)];
         state.phase = "done";
         renderBottom();
         renderRetry();
