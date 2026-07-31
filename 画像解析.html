@@ -195,6 +195,13 @@
   .retry-row .btn-start{flex:1;}
   .retry-row .btn{flex:1;}
 
+  .dev-footer{border:1px dashed rgba(255,207,107,0.25);background:rgba(255,207,107,0.03);border-radius:8px;padding:14px 16px;}
+  .dev-footer .dev-title{margin:0 0 8px;font-family:ui-monospace,monospace;font-size:9px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;}
+  .dev-stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:ui-monospace,monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;}
+  .dev-stats b{color:var(--fg-base);font-weight:400;}
+  .dev-footer p.punch{margin:0;font-size:12px;color:var(--fg-dim);line-height:1.6;}
+  .dev-footer p.punch b{color:var(--amber);font-weight:600;}
+
   ::-webkit-scrollbar{width:8px;height:8px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--border-dim);border-radius:999px;}
@@ -279,6 +286,18 @@
       <div class="retry-row" id="retryRow" style="display:none;">
         <button type="button" class="btn-start" id="btnRetry">再解析</button>
         <button type="button" class="btn" id="btnReset">別の画像を解析</button>
+      </div>
+
+      <div class="dev-footer">
+        <p class="dev-title">開発実績ログ</p>
+        <div class="dev-stats">
+          <span>MODEL: <b>Claude Sonnet 5</b></span>
+          <span>COST: <b>$11.07</b></span>
+          <span>API TIME: <b>24min</b></span>
+          <span>WALL TIME: <b>30min</b></span>
+          <span>TOKENS: <b>546 in / 3.6k out</b></span>
+        </div>
+        <p class="punch">この「<b>何かが写っています</b>」という結論一つを出すためだけに、上記のコストと時間が溶けました。</p>
       </div>
     </div>
 
