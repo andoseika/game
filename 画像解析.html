@@ -152,7 +152,7 @@
   @media (min-width:640px){.viz-grid{grid-template-columns:1fr 1fr;}}
   .viz-box{border:1px solid var(--border-dim);background:rgba(0,0,0,0.3);border-radius:6px;padding:8px;height:64px;display:flex;align-items:flex-end;}
   .hist-bar{flex:1;background:rgba(34,232,224,0.7);border-radius:2px 2px 0 0;transform-origin:bottom;animation:rise .4s ease-out forwards;}
-  .rgb-bars{width:100%;display:flex;align-items:flex-end;justify-content:space-around;gap:12px;}
+  .rgb-bars{width:100%;height:100%;display:flex;align-items:flex-end;justify-content:space-around;gap:12px;}
   .rgb-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;}
   .rgb-col .bar{width:12px;border-radius:2px 2px 0 0;transform-origin:bottom;animation:rise .4s ease-out forwards;}
   .rgb-col .lab{font-family:ui-monospace,monospace;font-size:9px;color:var(--fg-dim);}
@@ -250,20 +250,20 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title">解析プロセス</h2>
-        <span class="steps-count" id="stepsCount">00 / 45</span>
-      </div>
-      <div class="steps-head">
-        <span>#</span><span>ステップ / 詳細</span><span>状態</span>
-      </div>
-      <ul class="steps-list" id="stepsList"></ul>
+      <h2 class="panel-title" style="margin-bottom:16px;">解析結果</h2>
+      <div id="resultArea"></div>
     </section>
 
     <div class="span2" style="display:flex;flex-direction:column;gap:16px;">
       <section class="panel">
-        <h2 class="panel-title" style="margin-bottom:16px;">解析結果</h2>
-        <div id="resultArea"></div>
+        <div class="panel-head">
+          <h2 class="panel-title">解析プロセス</h2>
+          <span class="steps-count" id="stepsCount">00 / 45</span>
+        </div>
+        <div class="steps-head">
+          <span>#</span><span>ステップ / 詳細</span><span>状態</span>
+        </div>
+        <ul class="steps-list" id="stepsList"></ul>
       </section>
 
       <div class="retry-row" id="retryRow" style="display:none;">
@@ -271,14 +271,14 @@
         <button type="button" class="btn" id="btnReset">別の画像を解析</button>
       </div>
 
-      <div class="dev-footer">
+      <div class="dev-footer" id="devFooter" style="display:none;">
         <p class="dev-title">開発実績ログ</p>
         <div class="dev-stats">
           <span>MODEL: <b>Claude Sonnet 5</b></span>
-          <span>COST: <b>$11.07</b></span>
-          <span>API TIME: <b>24min</b></span>
-          <span>WALL TIME: <b>30min</b></span>
-          <span>TOKENS: <b>546 in / 3.6k out</b></span>
+          <span>COST: <b>$23.12</b></span>
+          <span>API TIME: <b>36min</b></span>
+          <span>WALL TIME: <b>44min</b></span>
+          <span>TOKENS: <b>890 in / 6.8k out</b></span>
         </div>
         <p class="punch">この「<b>何かが写っています</b>」という結論一つを出すためだけに、上記のコストと時間が溶けました。</p>
       </div>
@@ -341,6 +341,12 @@
     { id:"recheck", label:"一応もう一回確認", description:"念のため再検証(重要)", min:1400, max:2000 },
     { id:"final-verdict", label:"総合判定生成", description:"最終統合・結論生成", min:700, max:1000 }
   ];
+
+  var DURATION_MULTIPLIER = 2;
+  STEP_DEFS.forEach(function(def){
+    def.min = Math.round(def.min * DURATION_MULTIPLIER);
+    def.max = Math.round(def.max * DURATION_MULTIPLIER);
+  });
 
   function buildRuntimeSteps(){
     var n = STEP_DEFS.length;
@@ -525,6 +531,7 @@
     stepsList: document.getElementById("stepsList"),
     resultArea: document.getElementById("resultArea"),
     retryRow: document.getElementById("retryRow"),
+    devFooter: document.getElementById("devFooter"),
     statusDot: document.getElementById("statusDot"),
     statusText: document.getElementById("statusText")
   };
@@ -725,7 +732,9 @@
   }
 
   function renderRetry(){
-    el.retryRow.style.display = state.phase === "done" ? "flex" : "none";
+    var done = state.phase === "done";
+    el.retryRow.style.display = done ? "flex" : "none";
+    el.devFooter.style.display = done ? "block" : "none";
   }
 
   function renderAll(){
